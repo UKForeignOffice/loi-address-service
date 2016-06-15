@@ -23,6 +23,7 @@ describe('Address Service', function() {
             .end(function(err,res) {
                 if(err) done(err);
                 res.body[1].organisation.should.equal('Informed Solutions Ltd');
+                res.body[1].house_name.should.equal('Old Bank House');
                 res.body[1].postcode.should.equal('WA14 4PA');
                 done();
             });
