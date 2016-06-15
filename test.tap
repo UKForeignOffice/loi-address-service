@@ -1,0 +1,47 @@
+is-address-service running on port 3003
+1..3
+not ok 1  Uncaught error outside test suite
+  Error: listen EADDRINUSE :::3003
+      at Object.exports._errnoException (util.js:874:11)
+      at exports._exceptionWithHostPort (util.js:897:20)
+      at Server._listen2 (net.js:1234:14)
+      at listen (net.js:1270:10)
+      at Server.listen (net.js:1366:5)
+      at Function.app.listen (R:\Public FCO\loi-address-service\node_modules\express\lib\application.js:531:24)
+      at Object.<anonymous> (R:\Public FCO\loi-address-service\server.js:9:6424)
+      at Object.Module._extensions.(anonymous function) [as .js] (R:\Public FCO\loi-address-service\node_modules\istanbul\lib\hook.js:107:24)
+      at Object.<anonymous> (R:\Public FCO\loi-address-service\test\server.test.js:1:73)
+      at Object.Module._extensions.(anonymous function) [as .js] (R:\Public FCO\loi-address-service\node_modules\istanbul\lib\hook.js:109:37)
+      at R:\Public FCO\loi-address-service\node_modules\mocha\lib\mocha.js:216:27
+      at Array.forEach (native)
+      at Mocha.loadFiles (R:\Public FCO\loi-address-service\node_modules\mocha\lib\mocha.js:213:14)
+      at Mocha.run (R:\Public FCO\loi-address-service\node_modules\mocha\lib\mocha.js:453:10)
+      at Object.<anonymous> (R:\Public FCO\loi-address-service\node_modules\mocha\bin\_mocha:393:18)
+      at Object.Module._extensions.(anonymous function) [as .js] (R:\Public FCO\loi-address-service\node_modules\istanbul\lib\hook.js:109:37)
+      at runFn (R:\Public FCO\loi-address-service\node_modules\istanbul\lib\command\common\run-with-cover.js:122:16)
+      at R:\Public FCO\loi-address-service\node_modules\istanbul\lib\command\common\run-with-cover.js:251:17
+      at R:\Public FCO\loi-address-service\node_modules\istanbul\lib\util\file-matcher.js:68:16
+      at R:\Public FCO\loi-address-service\node_modules\istanbul\node_modules\async\lib\async.js:52:16
+      at R:\Public FCO\loi-address-service\node_modules\istanbul\node_modules\async\lib\async.js:361:13
+      at R:\Public FCO\loi-address-service\node_modules\istanbul\node_modules\async\lib\async.js:52:16
+      at done (R:\Public FCO\loi-address-service\node_modules\istanbul\node_modules\async\lib\async.js:246:17)
+      at R:\Public FCO\loi-address-service\node_modules\istanbul\node_modules\async\lib\async.js:44:16
+      at R:\Public FCO\loi-address-service\node_modules\istanbul\node_modules\async\lib\async.js:358:17
+      at LOOP (fs.js:1539:14)
+ok 1 Address Service should return healthcheck message "is-address-service running" on /api/address/healthcheck GET
+not ok 2 Address Service should return Informed Solutions address on /api/address/WA144PA GET
+  Error: timeout of 2000ms exceeded. Ensure the done() callback is being called in this test.
+      at null.<anonymous> (R:\Public FCO\loi-address-service\node_modules\mocha\lib\runnable.js:189:19)
+not ok 3 Address Service should return "No matching address found" on /api/address/INVALID GET
+  Error: timeout of 2000ms exceeded. Ensure the done() callback is being called in this test.
+      at null.<anonymous> (R:\Public FCO\loi-address-service\node_modules\mocha\lib\runnable.js:189:19)
+# tests 4
+# pass 1
+# fail 3
+
+=============================== Coverage summary ===============================
+Statements   : 50% ( 29/58 )
+Branches     : 10.71% ( 3/28 )
+Functions    : 30% ( 3/10 )
+Lines        : 50% ( 29/58 )
+================================================================================
