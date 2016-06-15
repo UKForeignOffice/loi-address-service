@@ -115,7 +115,6 @@ router.route('/lookup/:postcode')
         });
     });
 function getHouseName(address){
-    console.log(address);
 //Flat and building
     if(typeof(address.subBuilding)!='undefined'){
         return address.subBuilding+', '+(address.buildingName ||address.buildingNumber);
