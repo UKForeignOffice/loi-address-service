@@ -84,7 +84,6 @@ router.route('/lookup/:postcode')
                             var addressResult = [];
                             var addressResponse = addResult.addressLookupResponse;
                             if (addressResponse && addressResponse.address) {
-                                console.log(addressResponse);
                                 var addresses = addressResponse.address;
                                 if (addresses.length > 0) {
                                     addressResponse.address.forEach(function (address) {
