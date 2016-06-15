@@ -116,8 +116,23 @@ router.route('/lookup/:postcode')
     });
 function getHouseName(address){
 //Flat and building
+    /* New Code
+     if(typeof(address.subBuilding)!='undefined'){
+     return address.subBuilding+', '+(address.buildingName ||address.buildingNumber);
+     }
+     if(typeof(address.subBuilding)=='undefined' && typeof(address.buildingName)!='undefined'){
+     return address.buildingName;
+     }
+     if(typeof(address.subBuilding)=='undefined' &&typeof(address.buildingName)=='undefined'){
+     return address.buildingNumber;
+     }
+     */
+//Old for release v1.0.5
+    if(typeof(address.organisation)!='undefined'){
+        return address.organisation;
+    }
     if(typeof(address.subBuilding)!='undefined'){
-        return address.subBuilding+', '+(address.buildingName ||address.buildingNumber);
+        return address.subBuilding+' '+address.buildingName;
     }
     if(typeof(address.subBuilding)=='undefined' && typeof(address.buildingName)!='undefined'){
         return address.buildingName;
