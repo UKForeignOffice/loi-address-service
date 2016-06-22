@@ -17,6 +17,7 @@ describe('Address Service', function() {
     });
 
     it('should return Informed Solutions address on /api/address/WA144PA GET', function(done) {
+        this.timeout(15000);
         supertest
             .get('/api/address/lookup/WA144PA')
             .expect(200)
@@ -30,6 +31,7 @@ describe('Address Service', function() {
     });
 
     it('should return "No matching address found" on /api/address/INVALID GET', function(done) {
+        this.timeout(15000);
         supertest
             .get('/api/address/lookup/INVALID')
             .expect(200)
