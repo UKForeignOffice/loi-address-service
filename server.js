@@ -120,7 +120,7 @@ function getHouseName(address){
         return address.organisation;
     }
     if(typeof(address.subBuilding)!='undefined'){
-        return address.subBuilding+' '+address.buildingName + (address.buildingNumber ? ' '+address.buildingNumber :'');
+        return address.subBuilding+' '+address.buildingName + (address.buildingNumber ? ', '+address.buildingNumber :'');
     }
     if(typeof(address.subBuilding)=='undefined' && typeof(address.buildingName)!='undefined'){
         return address.buildingName;
