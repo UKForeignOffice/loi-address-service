@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 var soap = require('soap');
 var dotenv = require('dotenv');
 var env = dotenv.config();
+require('./config/logs');
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
@@ -58,6 +59,7 @@ router.route('/lookup/:postcode')
         var guid = new Guid('6C49BC44-C104-41b2-BB62-2AE45A09DD54');
         soap.createClient(url, function (err, client) {
             if (err) {
+                console.error('GBGroup Connection Failed');
                 res.status(500);
                 res.json({error: err});
                 return;
@@ -81,6 +83,7 @@ router.route('/lookup/:postcode')
                     soap.createClient(url, function (err, client2) {
                         c2 = client2;
                         client2.ExecuteAddressLookup(args, function (err, addResult) {
+                            console.info('Successful postcode lookup');
                             var addressResult = [];
                             var addressResponse = addResult.addressLookupResponse;
                             if (addressResponse && addressResponse.address) {
@@ -99,10 +102,12 @@ router.route('/lookup/:postcode')
                                     });
                                 }
                                 else {
+                                    console.info("Address not found with given postcode");
                                     res.json({message: "No matching address found: no address"});
                                 }
                             }
                             else {
+                                console.error("No response received from GBGroup");
                                 res.json({message: "No matching address found: no response"});
                             }
 
