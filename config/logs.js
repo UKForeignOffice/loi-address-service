@@ -41,7 +41,7 @@ var logger = new winston.Logger({
                     (options.meta && Object.keys(options.meta).length ? '\n\t' + JSON.stringify(options.meta) : '' );
             },
             name: 'error-file',
-            filename: './server/logs/fco-loi-address-service-error.log',
+            filename: './logs/fco-loi-address-service-error.log',
             level: 'error',
             handleExceptions: true,
             humanReadableUnhandledException: true,
