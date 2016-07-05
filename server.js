@@ -8,7 +8,7 @@ var bodyParser = require('body-parser');
 var soap = require('soap');
 var dotenv = require('dotenv');
 var env = dotenv.config();
-
+require('./config/logs');
 // configure app to use bodyParser()
 // this will let us get the data from a POST
 app.use(bodyParser.urlencoded({extended: true}));
@@ -84,6 +84,7 @@ router.route('/lookup/:postcode')
                             var addressResult = [];
                             var addressResponse = addResult.addressLookupResponse;
                             if (addressResponse && addressResponse.address) {
+                                console.info('Successful postcode lookup');
                                 var addresses = addressResponse.address;
                                 if (addresses.length > 0) {
                                     addressResponse.address.forEach(function (address) {
@@ -99,10 +100,12 @@ router.route('/lookup/:postcode')
                                     });
                                 }
                                 else {
+                                    console.info("Address not found with given postcode");
                                     res.json({message: "No matching address found: no address"});
                                 }
                             }
                             else {
+                                console.error("No response received from GBGroup");
                                 res.json({message: "No matching address found: no response"});
                             }
 
