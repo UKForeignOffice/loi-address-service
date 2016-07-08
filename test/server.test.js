@@ -11,7 +11,7 @@ describe('Address Service', function() {
             .expect(200)
             .end(function(err,res) {
                 if(err) done(err);
-                res.body.message.should.equal('is-address-service running');
+                res.body.message.should.equal('Address Service is running');
                 done();
             });
     });
