@@ -29,7 +29,7 @@ var router = express.Router();              // get an instance of the express Ro
 
 // healthcheck route to make sure everything is working (accessed at GET http://localhost:8080/api)
 router.get('/', function (req, res) {
-    res.json({message: 'is-address-service running'});
+    res.json({message: 'Address Service is running'});
 });
 
 // more routes for our API will happen here
@@ -37,9 +37,8 @@ router.get('/', function (req, res) {
 // healthcheck route
 // ----------------------------------------------------------------------------
 router.route('/healthcheck')
-
     .get(function (req, res) {
-        res.json({message: "is-address-service running"});
+        res.json({message: 'Address Service is running'});
     });
 
 
