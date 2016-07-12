@@ -9,6 +9,7 @@ var soap = require('soap');
 var dotenv = require('dotenv');
 var env = dotenv.config();
 require('./config/logs');
+
 // configure app to use bodyParser()
 // this will let us get the data from a POST
 app.use(bodyParser.urlencoded({extended: true}));
@@ -28,7 +29,7 @@ var router = express.Router();              // get an instance of the express Ro
 
 // healthcheck route to make sure everything is working (accessed at GET http://localhost:8080/api)
 router.get('/', function (req, res) {
-    res.json({message: 'is-address-service running'});
+    res.json({message: 'Address Service is running'});
 });
 
 // more routes for our API will happen here
@@ -36,9 +37,8 @@ router.get('/', function (req, res) {
 // healthcheck route
 // ----------------------------------------------------------------------------
 router.route('/healthcheck')
-
     .get(function (req, res) {
-        res.json({message: "is-address-service running"});
+        res.json({message: 'Address Service is running'});
     });
 
 
@@ -58,6 +58,7 @@ router.route('/lookup/:postcode')
         var guid = new Guid('6C49BC44-C104-41b2-BB62-2AE45A09DD54');
         soap.createClient(url, function (err, client) {
             if (err) {
+                console.error('GBGroup Connection Failed');
                 res.status(500);
                 res.json({error: err});
                 return;
@@ -81,6 +82,7 @@ router.route('/lookup/:postcode')
                     soap.createClient(url, function (err, client2) {
                         c2 = client2;
                         client2.ExecuteAddressLookup(args, function (err, addResult) {
+                            console.info('Successful postcode lookup');
                             var addressResult = [];
                             var addressResponse = addResult.addressLookupResponse;
                             if (addressResponse && addressResponse.address) {
@@ -118,24 +120,11 @@ router.route('/lookup/:postcode')
         });
     });
 function getHouseName(address){
-//Flat and building
-    /* New Code
-     if(typeof(address.subBuilding)!='undefined'){
-     return address.subBuilding+', '+(address.buildingName ||address.buildingNumber);
-     }
-     if(typeof(address.subBuilding)=='undefined' && typeof(address.buildingName)!='undefined'){
-     return address.buildingName;
-     }
-     if(typeof(address.subBuilding)=='undefined' &&typeof(address.buildingName)=='undefined'){
-     return address.buildingNumber;
-     }
-     */
-//Old for release v1.0.5
-    if(typeof(address.organisation)!='undefined'){
-        return address.organisation;
+    if(typeof(address.subBuilding)!='undefined' && typeof(address.buildingNumber)!='undefined'&& typeof(address.buildingName)!='undefined'){
+        return  address.subBuilding+', '+address.buildingName + (address.buildingNumber ? ', '+address.buildingNumber :'');
     }
-    if(typeof(address.subBuilding)!='undefined'){
-        return address.subBuilding+' '+address.buildingName;
+    else if(typeof(address.subBuilding)!='undefined'){
+        return address.subBuilding+', '+(address.buildingName || address.buildingNumber);
     }
     if(typeof(address.subBuilding)=='undefined' && typeof(address.buildingName)!='undefined'){
         return address.buildingName;
@@ -143,7 +132,6 @@ function getHouseName(address){
     if(typeof(address.subBuilding)=='undefined' &&typeof(address.buildingName)=='undefined'){
         return address.buildingNumber;
     }
-
 
 }
 
