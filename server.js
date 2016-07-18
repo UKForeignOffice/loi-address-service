@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 var soap = require('soap');
 var dotenv = require('dotenv');
 var env = dotenv.config();
+require('./config/logs');
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
@@ -28,7 +29,7 @@ var router = express.Router();              // get an instance of the express Ro
 
 // healthcheck route to make sure everything is working (accessed at GET http://localhost:8080/api)
 router.get('/', function (req, res) {
-    res.json({message: 'is-address-service running'});
+    res.json({message: 'Address Service is running'});
 });
 
 // more routes for our API will happen here
@@ -36,9 +37,8 @@ router.get('/', function (req, res) {
 // healthcheck route
 // ----------------------------------------------------------------------------
 router.route('/healthcheck')
-
     .get(function (req, res) {
-        res.json({message: "is-address-service running"});
+        res.json({message: 'Address Service is running'});
     });
 
 
@@ -58,6 +58,7 @@ router.route('/lookup/:postcode')
         var guid = new Guid('6C49BC44-C104-41b2-BB62-2AE45A09DD54');
         soap.createClient(url, function (err, client) {
             if (err) {
+                console.error('GBGroup Connection Failed');
                 res.status(500);
                 res.json({error: err});
                 return;
@@ -81,9 +82,11 @@ router.route('/lookup/:postcode')
                     soap.createClient(url, function (err, client2) {
                         c2 = client2;
                         client2.ExecuteAddressLookup(args, function (err, addResult) {
+                            console.info('Successful postcode lookup');
                             var addressResult = [];
                             var addressResponse = addResult.addressLookupResponse;
                             if (addressResponse && addressResponse.address) {
+                                console.info('Successful postcode lookup');
                                 var addresses = addressResponse.address;
                                 if (addresses.length > 0) {
                                     addressResponse.address.forEach(function (address) {
@@ -99,10 +102,12 @@ router.route('/lookup/:postcode')
                                     });
                                 }
                                 else {
+                                    console.info("Address not found with given postcode");
                                     res.json({message: "No matching address found: no address"});
                                 }
                             }
                             else {
+                                console.error("No response received from GBGroup");
                                 res.json({message: "No matching address found: no response"});
                             }
 
@@ -115,9 +120,11 @@ router.route('/lookup/:postcode')
         });
     });
 function getHouseName(address){
-//Flat and building
-    if(typeof(address.subBuilding)!='undefined'){
-        return address.subBuilding+', '+(address.buildingName ||address.buildingNumber);
+    if(typeof(address.subBuilding)!='undefined' && typeof(address.buildingNumber)!='undefined'&& typeof(address.buildingName)!='undefined'){
+        return  address.subBuilding+', '+address.buildingName + (address.buildingNumber ? ', '+address.buildingNumber :'');
+    }
+    else if(typeof(address.subBuilding)!='undefined'){
+        return address.subBuilding+', '+(address.buildingName || address.buildingNumber);
     }
     if(typeof(address.subBuilding)=='undefined' && typeof(address.buildingName)!='undefined'){
         return address.buildingName;
@@ -125,7 +132,6 @@ function getHouseName(address){
     if(typeof(address.subBuilding)=='undefined' &&typeof(address.buildingName)=='undefined'){
         return address.buildingNumber;
     }
-
 
 }
 
