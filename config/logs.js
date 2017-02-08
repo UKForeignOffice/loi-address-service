@@ -1,3 +1,6 @@
+/**
+ * Created by preciousr on 05/07/2016.
+ */
 var winston = require('winston');
 var logger = new winston.Logger({
     transports: [
