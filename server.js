@@ -86,6 +86,10 @@ router.route('/lookup/:postcode')
                             var addressResult = [];
                             var addressResponse = addResult.addressLookupResponse;
                             if (addressResponse && addressResponse.address) {
+                                console.info('Successful postcode lookup - Records returned: ' +
+                                    addressResponse.recordsReturned +
+                                    ' Status: ' + addressResponse.profileHeader.profileStatus +
+                                    ' resultStatus: ' + addressResponse.resultStatus);
                                 var addresses = addressResponse.address;
                                 if (addresses.length > 0) {
                                     addressResponse.address.forEach(function (address) {
@@ -112,7 +116,10 @@ router.route('/lookup/:postcode')
 
                             res.json(addressResult);
                         });
-                    });
+                    },
+                        function(err) {
+                            console.error(err)
+                        });
                 }
             )
             ;
