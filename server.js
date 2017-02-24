@@ -80,13 +80,18 @@ router.route('/lookup/:postcode')
                     };
                     var c2 = null;
                     soap.createClient(url, function (err, client2) {
+                        if (err){
+                            console.error(err);
+                        }
                         c2 = client2;
                         client2.ExecuteAddressLookup(args, function (err, addResult) {
-                            console.info('Successful postcode lookup');
                             var addressResult = [];
                             var addressResponse = addResult.addressLookupResponse;
                             if (addressResponse && addressResponse.address) {
-                                console.info('Successful postcode lookup');
+                                console.info('Successful postcode lookup - Records returned: ' +
+                                    addressResponse.recordsReturned +
+                                    ' Status: ' + addressResponse.profileHeader.profileStatus +
+                                    ' resultStatus: ' + addressResponse.resultStatus);
                                 var addresses = addressResponse.address;
                                 if (addresses.length > 0) {
                                     addressResponse.address.forEach(function (address) {
