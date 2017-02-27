@@ -85,6 +85,7 @@ router.route('/lookup/:postcode')
                         }
                         c2 = client2;
                         client2.ExecuteAddressLookup(args, function (err, addResult) {
+                            console.info('Successful postcode lookup');
                             var addressResult = [];
                             var addressResponse = addResult.addressLookupResponse;
                             if (addressResponse && addressResponse.address) {
