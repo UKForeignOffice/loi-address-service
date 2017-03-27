@@ -7,7 +7,7 @@ var app = express();                 // define our app using express
 var bodyParser = require('body-parser');
 var soap = require('soap');
 var dotenv = require('dotenv');
-var env = dotenv.config();
+var env = dotenv.config({path: process.env.DOTENV || '.env'});
 require('./config/logs');
 
 // configure app to use bodyParser()
