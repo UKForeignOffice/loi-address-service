@@ -2,11 +2,11 @@
   "name": "loi-address-service",
   "main": "server.js",
   "dependencies": {
-    "body-parser": "~1.17.2",
+    "body-parser": "1.18.2",
     "dotenv": "^2.0.0",
-    "express": "~4.15.3",
+    "express": "4.16.2",
     "guid": "0.0.12",
-    "soap": "^0.11.4",
+    "soap": "0.23.0",
     "winston": "^2.1.1"
   },
   "scripts": {
