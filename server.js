@@ -47,15 +47,23 @@ router.route('/healthcheck')
 router.route('/lookup/:postcode')
     // get the address with the specified postcode (accessed at GET http://localhost:8080/api/address/lookup/:postcode)
     .get(function (req, res) {
-        var url = 'https://idmp.gb.co.uk/idm-globalservices-ws/GlobalServices15b.wsdl';
+
+        var authConfig = JSON.parse(env.parsed.AUTHS)
 
 		/**
 		Moved to env config file
 		**/
-        var authArgs =  JSON.parse(env.AUTHS);
+        var authArgs = {
+            username: authConfig.username,
+            password: authConfig.password
+            };
 
-        var Guid = require('guid');
-        var guid = new Guid('6C49BC44-C104-41b2-BB62-2AE45A09DD54');
+        //GBGroup endpoint to query
+        var url = authConfig.gbGroupEndpoint;
+
+        //Product identifier for GBGroup product
+        var profileGuid = authConfig.profileGuid;
+
         soap.createClient(url, function (err, client) {
             if (err) {
                 console.error('GBGroup Connection Failed');
@@ -64,66 +72,58 @@ router.route('/lookup/:postcode')
                 return;
             }
             client.AuthenticateUser(authArgs, function (err, result) {
-                    var IdmDataSearchAddress = {'postCode': req.params.postcode};
                     var args = {
                         "securityHeader": {
                             "authenticationToken": result.authenticationToken,
                             "username": authArgs.username
                         },
                         "addressLookupRequest": {
-                            "profileGuid": guid.value,
+                            "profileGuid": profileGuid,
 
                             "address": {
                                 "postCode": req.params.postcode
                             }
                         }
                     };
-                    var c2 = null;
-                    soap.createClient(url, function (err, client2) {
-                        if (err){
-                            console.error(err);
-                        }
-                        c2 = client2;
-                        client2.ExecuteAddressLookup(args, function (err, addResult) {
-                            var addressResult = [];
-                            var addressResponse = addResult.addressLookupResponse;
-                            if (addressResponse && addressResponse.address) {
+
+                    client.ExecuteAddressLookup(args, function (err, addResult) {
+                        var addressResult = [];
+                        var addressResponse = addResult.addressLookupResponse;
+
+                        if (addressResponse) {
+                            if (addressResponse.recordsReturned > 0) {
                                 console.info('Successful postcode lookup - Records returned: ' +
                                     addressResponse.recordsReturned +
                                     ' Status: ' + addressResponse.profileHeader.profileStatus +
                                     ' resultStatus: ' + addressResponse.resultStatus);
-                                var addresses = addressResponse.address;
-                                if (addresses.length > 0) {
-                                    addressResponse.address.forEach(function (address) {
-                                        addressResult.push({
-                                            organisation:typeof(address.organisation)!='undefined'? address.organisation : null,
-                                            house_name: getHouseName(address),
-                                            street: address.street,
-                                            town: address.town,
-                                            county: address.stateRegion || '' ,
-                                            postcode: address.postCode.toUpperCase(),
-                                            full : address.formattedAddress
-                                        });
+                                addressResponse.address.forEach(function (address) {
+                                    addressResult.push({
+                                        organisation: typeof (address.organisation) != 'undefined' ? address.organisation : null,
+                                        house_name: getHouseName(address),
+                                        street: address.street,
+                                        town: address.town,
+                                        county: address.stateRegion || '',
+                                        postcode: address.postCode.toUpperCase(),
+                                        full: address.formattedAddress
                                     });
-                                }
-                                else {
-                                    console.info("Address not found with given postcode");
-                                    res.json({message: "No matching address found: no address"});
-                                }
+                                });
+                                res.json(addressResult);
+                            } else {
+                                console.info("Address not found with given postcode");
+                                res.json({message: "No matching address found: no address"});
                             }
-                            else {
-                                console.error("No response received from GBGroup");
-                                res.json({message: "No matching address found: no response"});
-                            }
+                        } else {
+                            console.error("No response received from GBGroup", err);
+                            res.json({message: "No matching address found: no response"});
+                        }
 
-                            res.json(addressResult);
-                        });
                     });
                 }
             )
             ;
         });
     });
+
 function getHouseName(address){
     if(typeof(address.subBuilding)!='undefined' && typeof(address.buildingNumber)!='undefined'&& typeof(address.buildingName)!='undefined'){
         return  address.subBuilding+', '+address.buildingName + (address.buildingNumber ? ', '+address.buildingNumber :'');
