@@ -6,8 +6,7 @@ var express = require('express');        // call express
 var app = express();                 // define our app using express
 var bodyParser = require('body-parser');
 var soap = require('soap');
-var dotenv = require('dotenv');
-var env = dotenv.config({path: process.env.DOTENV || '.env'});
+require('dotenv').config()
 require('./config/logs');
 
 // configure app to use bodyParser()
@@ -48,7 +47,7 @@ router.route('/lookup/:postcode')
     // get the address with the specified postcode (accessed at GET http://localhost:8080/api/address/lookup/:postcode)
     .get(function (req, res) {
 
-        var authConfig = JSON.parse(env.parsed.AUTHS)
+        var authConfig = JSON.parse(process.env.AUTHS)
 
 		/**
 		Moved to env config file
