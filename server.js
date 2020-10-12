@@ -124,6 +124,9 @@ router.route('/lookup/:postcode')
     });
 
 function getHouseName(address){
+    if(typeof(address.subStreet)!='undefined'){
+        return address.formattedAddress.substr(0, address.formattedAddress.indexOf(','));
+    }
     if(typeof(address.subBuilding)!='undefined' && typeof(address.buildingNumber)!='undefined'&& typeof(address.buildingName)!='undefined'){
         return  address.subBuilding+', '+address.buildingName + (address.buildingNumber ? ', '+address.buildingNumber :'');
     }
@@ -136,7 +139,6 @@ function getHouseName(address){
     if(typeof(address.subBuilding)=='undefined' &&typeof(address.buildingName)=='undefined'){
         return address.buildingNumber;
     }
-
 }
 
 // REGISTER OUR ROUTES -------------------------------
