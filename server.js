@@ -99,7 +99,7 @@ router.route('/lookup/:postcode')
                                     addressResult.push({
                                         organisation: typeof (address.organisation) != 'undefined' ? address.organisation : null,
                                         house_name: getHouseName(address),
-                                        street: address.street,
+                                        street: getStreet(address),
                                         town: address.town,
                                         county: address.stateRegion || '',
                                         postcode: address.postCode.toUpperCase(),
@@ -124,9 +124,6 @@ router.route('/lookup/:postcode')
     });
 
 function getHouseName(address){
-    if(typeof(address.subStreet)!='undefined'){
-        return address.formattedAddress.substr(0, address.formattedAddress.indexOf(','));
-    }
     if(typeof(address.subBuilding)!='undefined' && typeof(address.buildingNumber)!='undefined'&& typeof(address.buildingName)!='undefined'){
         return  address.subBuilding+', '+address.buildingName + (address.buildingNumber ? ', '+address.buildingNumber :'');
     }
@@ -138,6 +135,14 @@ function getHouseName(address){
     }
     if(typeof(address.subBuilding)=='undefined' &&typeof(address.buildingName)=='undefined'){
         return address.buildingNumber;
+    }
+}
+
+function getStreet(address){
+    if(typeof(address.subStreet)!='undefined'){
+        return address.subStreet+', '+address.street;
+    } else {
+        return address.street;
     }
 }
 
