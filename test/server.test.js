@@ -16,7 +16,7 @@ describe('Address Service', function() {
             });
     });
 
-    it('should return Kainos Software address on /api/address/BT71NT GET', function(done) {
+    it('should return Kainos Software address on /api/address/lookup/BT71NT GET', function(done) {
         this.timeout(15000);
         supertest
             .get('/api/address/lookup/BT71NT')
@@ -33,7 +33,7 @@ describe('Address Service', function() {
             });
     });
 
-    it('should return "No matching address found" on /api/address/INVALID GET', function(done) {
+    it('should return "No matching address found" on /api/address/lookup/INVALID GET', function(done) {
         this.timeout(15000);
         supertest
             .get('/api/address/lookup/INVALID')
