@@ -6,8 +6,8 @@ var express = require('express');        // call express
 var app = express();                 // define our app using express
 var bodyParser = require('body-parser');
 var soap = require('soap');
-require('dotenv').config()
-require('./config/logs');
+var logger = require('./config/logs')
+require('dotenv').config();
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
@@ -65,7 +65,7 @@ router.route('/lookup/:postcode')
 
         soap.createClient(url, function (err, client) {
             if (err) {
-                console.error('GBGroup Connection Failed');
+               logger.error('GBGroup Connection Failed');
                 res.status(500);
                 res.json({error: err});
                 return;
@@ -91,7 +91,7 @@ router.route('/lookup/:postcode')
 
                         if (addressResponse) {
                             if (addressResponse.recordsReturned > 0) {
-                                console.info('Successful postcode lookup - Records returned: ' +
+                                logger.info('Successful postcode lookup - Records returned: ' +
                                     addressResponse.recordsReturned +
                                     ' Status: ' + addressResponse.profileHeader.profileStatus +
                                     ' resultStatus: ' + addressResponse.resultStatus);
@@ -108,11 +108,11 @@ router.route('/lookup/:postcode')
                                 });
                                 res.json(addressResult);
                             } else {
-                                console.info("Address not found with given postcode");
+                                logger.info("Address not found with given postcode");
                                 res.json({message: "No matching address found: no address"});
                             }
                         } else {
-                            console.error("No response received from GBGroup", err);
+                            logger.error("No response received from GBGroup", err);
                             res.json({message: "No matching address found: no response"});
                         }
 
@@ -153,6 +153,6 @@ app.use('/api/address', router);
 // START THE SERVER
 // =============================================================================
 app.listen(port);
-console.log('is-address-service running on port ' + port);
+logger.info('is-address-service running on port ' + port);
 
 module.exports = app;
