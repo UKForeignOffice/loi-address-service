@@ -1,48 +1,20 @@
-/**
- * Created by preciousr on 05/07/2016.
- */
-var winston = require('winston');
-var logger = new winston.Logger({
-    transports: [
-        /*Log info to console*/
-        new (winston.transports.Console)({
-            timestamp: function () {
-                return getTimeStamp();
-            },
-            formatter: function (options) {
-                return '' + (undefined !== options.message ? options.message : '') +
-                    (options.meta && Object.keys(options.meta).length ? '\n\t' + JSON.stringify(options.meta) : '' );
-            },
-            name: 'info-console',
-            level: 'info',
-            handleExceptions: true,
-            humanReadableUnhandledException: true
-        }),
-        /*Log errors to console */
-        new (winston.transports.Console)({
-            timestamp: function () {
-                return getTimeStamp();
-            },
-            formatter: function (options) {
-                return '' + (undefined !== options.message ? options.message : '') +
-                    (options.meta && Object.keys(options.meta).length ? '\n\t' + JSON.stringify(options.meta) : '' );
-            },
-            name: 'error-console',
-            level: 'error',
-            handleExceptions: true,
-            humanReadableUnhandledException: true
-        })
-    ]
+const { createLogger, format, transports } = require('winston');
+const { combine, splat, timestamp, printf } = format;
+
+const logFormat = printf( ({ level, message, timestamp}) => {
+    return `${timestamp} [${level}] : ${message} `
 });
 
-// Overwrite some of the build-in console functions
-console.error = logger.error;
-console.log = logger.info;
-console.info = logger.info;
-console.debug = logger.debug;
-console.warn = logger.warn;
+const logger = createLogger({
+    format: combine(timestamp(), logFormat),
+    defaultMeta: { service: 'loi-address-service' },
+    transports: [
+        new transports.Console({level: 'error', handleExceptions: true, handleRejections: true}),
+        new transports.Console({level: 'info', handleExceptions: true, handleRejections: true})
+    ],
+    exitOnError: false
+});
 
-function getTimeStamp() {
-    var date = new Date();
-    return date.toISOString();
-}
+module.exports = logger;
+
+
