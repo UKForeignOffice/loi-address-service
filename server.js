@@ -20,7 +20,7 @@ app.use(function (req, res, next) {
     next();
 });
 
-var port = (process.argv[2] && !isNaN(process.argv[2]) ? process.argv[2] : 3003);        // set our port
+var port = (process.argv[2] && !isNaN(process.argv[2]) ? process.argv[2] : 3004);        // set our port
 
 // ROUTES FOR OUR API
 // =============================================================================
