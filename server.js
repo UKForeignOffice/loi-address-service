@@ -49,7 +49,13 @@ router.route('/lookup/:postcode')
 
         var authConfig = JSON.parse(process.env.AUTHS)
 
-		/**
+        // check the config to see if lookups are enabled
+        // if not then return this message instead
+        if (!authConfig.enabled) {
+            return res.json({ message: "No matching address found: no response" });
+        }
+
+        /**
 		Moved to env config file
 		**/
         var authArgs = {
@@ -154,5 +160,8 @@ app.use('/api/address', router);
 // =============================================================================
 app.listen(port);
 logger.info('is-address-service running on port ' + port);
-
+let authConfig = JSON.parse(process.env.AUTHS)
+if (!authConfig.enabled) {
+    logger.info('address lookups are currently disabled, please set "enabled":true in the config');
+}
 module.exports = app;
