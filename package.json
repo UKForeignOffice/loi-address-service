@@ -2,10 +2,10 @@
   "name": "loi-address-service",
   "main": "server.js",
   "dependencies": {
+    "axios": "^1.7.7",
     "body-parser": "^1.20.1",
     "dotenv": "^16.4.7",
     "express": "^4.20.0",
-    "soap": "^1.1.7",
     "winston": "^3.17.0"
   },
   "scripts": {
