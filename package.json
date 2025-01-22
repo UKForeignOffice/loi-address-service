@@ -3,10 +3,10 @@
   "main": "server.js",
   "dependencies": {
     "body-parser": "^1.20.1",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.4.7",
     "express": "^4.20.0",
-    "soap": "^1.0.0",
-    "winston": "^3.12.0"
+    "soap": "^1.1.7",
+    "winston": "^3.17.0"
   },
   "scripts": {
     "start": "node server.js 3004",
@@ -15,8 +15,8 @@
   },
   "devDependencies": {
     "jshint": "^2.13.6",
-    "mocha": "^10.3.0",
+    "mocha": "^11.0.1",
     "should": "^13.2.3",
-    "supertest": "^6.3.4"
+    "supertest": "^7.0.0"
   }
 }
