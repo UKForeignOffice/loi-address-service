@@ -1,17 +1,11 @@
-// BASE SETUP
-// =============================================================================
-
-// call the packages we need
-var express = require('express');        // call express
-var app = express();                 // define our app using express
-var bodyParser = require('body-parser');
-var soap = require('soap');
-var logger = require('./config/logs')
+const express = require('express'); // call express
+const app = express(); // define our app using express
+const bodyParser = require('body-parser');
+const axios = require('axios');
+const logger = require('./config/logs');
 require('dotenv').config();
 
-// configure app to use bodyParser()
-// this will let us get the data from a POST
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,148 +14,155 @@ app.use(function (req, res, next) {
     next();
 });
 
-var port = (process.argv[2] && !isNaN(process.argv[2]) ? process.argv[2] : 3004);        // set our port
+const port = process.argv[2] && !isNaN(process.argv[2]) ? process.argv[2] : 3004;
 
-// ROUTES FOR OUR API
-// =============================================================================
-var router = express.Router();              // get an instance of the express Router
+const router = express.Router();
 
-// healthcheck route to make sure everything is working (accessed at GET http://localhost:8080/api)
-router.get('/', function (req, res) {
-    res.json({message: 'Address Service is running'});
+router.get('/', (req, res) => {
+    res.json({ message: 'Address Service is running' });
 });
 
-// more routes for our API will happen here
+router.route('/healthcheck').get((req, res) => {
+    res.json({ message: 'Address Service is running' });
+});
 
-// healthcheck route
-// ----------------------------------------------------------------------------
-router.route('/healthcheck')
-    .get(function (req, res) {
-        res.json({message: 'Address Service is running'});
-    });
+// https://www.loqate.com/developers/api/Capture/Interactive/Find/1.1/
+router.route('/lookup/:postcode').get(async (req, res) => {
+    const authConfig = JSON.parse(process.env.AUTHS);
 
+    if (!authConfig.enabled) {
+        return res.json({ message: 'No matching address found: service disabled' });
+    }
 
-// route for specific address based on postcode in the form /address/:postcode
-// ----------------------------------------------------------------------------
-router.route('/lookup/:postcode')
-    // get the address with the specified postcode (accessed at GET http://localhost:8080/api/address/lookup/:postcode)
-    .get(function (req, res) {
+    const postcode = req.params.postcode;
 
-        var authConfig = JSON.parse(process.env.AUTHS)
+    try {
+        const params = { Key: authConfig.apiKey, Text: postcode, IsMiddleware: true };
 
-        // check the config to see if lookups are enabled
-        // if not then return this message instead
-        if (!authConfig.enabled) {
-            return res.json({ message: "No matching address found: no response" });
+        const response = await axios.get(authConfig.url + "/Find/v1.10/json3.ws", { params });
+
+        if (!response.data || !response.data.Items || response.data.Items.length === 0) {
+            logger.info('No addresses found for the given postcode');
+            return res.json({ message: 'No matching address found: no address' });
         }
 
-        /**
-		Moved to env config file
-		**/
-        var authArgs = {
-            username: authConfig.username,
-            password: authConfig.password
-            };
+        let addresses = [];
+        let postcodeLookups = [];
 
-        //GBGroup endpoint to query
-        var url = authConfig.gbGroupEndpoint;
-
-        //Product identifier for GBGroup product
-        var profileGuid = authConfig.profileGuid;
-
-        soap.createClient(url, function (err, client) {
-            if (err) {
-               logger.error('GBGroup Connection Failed');
-                res.status(500);
-                res.json({error: err});
-                return;
+        for (const item of response.data.Items) {
+            if (item.Type === 'Postcode') {
+                // Collect all postcode IDs for additional lookups
+                postcodeLookups.push(item.Id);
             }
-            client.AuthenticateUser(authArgs, function (err, result) {
-                    var args = {
-                        "securityHeader": {
-                            "authenticationToken": result.authenticationToken,
-                            "username": authArgs.username
-                        },
-                        "addressLookupRequest": {
-                            "profileGuid": profileGuid,
+        }
 
-                            "address": {
-                                "postCode": req.params.postcode
-                            }
+        if (postcodeLookups.length > 0) {
+            // Lookup addresses using each postcode ID
+            const postcodeRequests = postcodeLookups.map(Id => {
+                const postcodeParams = { Key: authConfig.apiKey, Text: postcode, IsMiddleware: true, Container: Id };
+                return axios.get(authConfig.url + "/Find/v1.10/json3.ws", { params: postcodeParams });
+            });
+
+            const postcodeResponses = await Promise.all(postcodeRequests);
+
+            for (const postcodeResponse of postcodeResponses) {
+                if (postcodeResponse.data && postcodeResponse.data.Items) {
+                    for (const item of postcodeResponse.data.Items) {
+                        if (item.Type === 'Address') {
+                            addresses.push({
+                                id: item.Id,
+                                text: item.Text,
+                                description: item.Description,
+                            });
                         }
-                    };
-
-                    client.ExecuteAddressLookup(args, function (err, addResult) {
-                        var addressResult = [];
-                        var addressResponse = addResult.addressLookupResponse;
-
-                        if (addressResponse) {
-                            if (addressResponse.recordsReturned > 0) {
-                                logger.info('Successful postcode lookup - Records returned: ' +
-                                    addressResponse.recordsReturned +
-                                    ' Status: ' + addressResponse.profileHeader.profileStatus +
-                                    ' resultStatus: ' + addressResponse.resultStatus);
-                                addressResponse.address.forEach(function (address) {
-                                    addressResult.push({
-                                        organisation: typeof (address.organisation) != 'undefined' ? address.organisation : null,
-                                        house_name: getHouseName(address),
-                                        street: getStreet(address),
-                                        town: address.town,
-                                        county: address.stateRegion || '',
-                                        postcode: address.postCode.toUpperCase(),
-                                        full: address.formattedAddress
-                                    });
-                                });
-                                res.json(addressResult);
-                            } else {
-                                logger.info("Address not found with given postcode");
-                                res.json({message: "No matching address found: no address"});
-                            }
-                        } else {
-                            logger.error("No response received from GBGroup", err);
-                            res.json({message: "No matching address found: no response"});
-                        }
-
+                    }
+                }
+            }
+        } else {
+            for (const item of response.data.Items) {
+                if (item.Type === 'Address') {
+                    // Normal address, add to list
+                    addresses.push({
+                        id: item.Id,
+                        text: item.Text,
+                        description: item.Description,
                     });
                 }
-            )
-            ;
-        });
-    });
+            }
+        }
 
-function getHouseName(address){
-    if(typeof(address.subBuilding)!='undefined' && typeof(address.buildingNumber)!='undefined'&& typeof(address.buildingName)!='undefined'){
-        return  address.subBuilding+', '+address.buildingName + (address.buildingNumber ? ', '+address.buildingNumber :'');
+        res.json(addresses);
+    } catch (error) {
+        logger.error('Error fetching addresses:', error.message);
+        res.status(500).json({ error: 'Internal server error' });
     }
-    else if(typeof(address.subBuilding)!='undefined'){
-        return address.subBuilding+', '+(address.buildingName || address.buildingNumber);
+});
+
+// https://www.loqate.com/developers/api/Capture/Interactive/Retrieve/1.2/
+router.route('/retrieve/:id').get(async (req, res) => {
+    const authConfig = JSON.parse(process.env.AUTHS);
+
+    if (!authConfig.enabled) {
+        return res.json({ message: 'No matching address found: service disabled' });
     }
-    if(typeof(address.subBuilding)=='undefined' && typeof(address.buildingName)!='undefined'){
-        return address.buildingName;
+
+    const addressId = req.params.id;
+
+    try {
+        const params = { Key: authConfig.apiKey, Id: addressId };
+
+        const response = await axios.get(authConfig.url + "/Retrieve/v1.20/json3.ws", { params });
+        if (response.data && response.data.Items && response.data.Items.length > 0) {
+            const address = response.data.Items[0];
+            const formattedAddress = {
+                organisation: address.Company || null,
+                house_name: getHouseName(address),
+                street: getStreet(address),
+                town: address.City || '',
+                county: address.Province || '',
+                postcode: address.PostalCode.toUpperCase() || '',
+                full: address.Label || '',
+            };
+            res.json(formattedAddress);
+        } else {
+            logger.info('No detailed address found for the given ID');
+            res.json({ message: 'No matching address found: no details' });
+        }
+    } catch (error) {
+        logger.error('Error fetching address details:', error.message);
+        res.status(500).json({ error: 'Internal server error' });
     }
-    if(typeof(address.subBuilding)=='undefined' &&typeof(address.buildingName)=='undefined'){
-        return address.buildingNumber;
+});
+
+// Helper functions to format the address components
+function getHouseName(address) {
+    if (address.SubBuilding && address.BuildingName && address.BuildingNumber) {
+        return `${address.SubBuilding}, ${address.BuildingName}, ${address.BuildingNumber}`;
     }
+    if (address.SubBuilding) {
+        return `${address.SubBuilding}, ${address.BuildingName || address.BuildingNumber || ''}`;
+    }
+    if (address.BuildingName) {
+        return address.BuildingName;
+    }
+    return address.BuildingNumber || '';
 }
 
-function getStreet(address){
-    if(typeof(address.subStreet)!='undefined'){
-        return address.subStreet+', '+address.street;
-    } else {
-        return address.street;
+function getStreet(address) {
+    if (address.SecondaryStreet) {
+        return `${address.SecondaryStreet}, ${address.Street}`;
     }
+    return address.Street || '';
 }
 
-// REGISTER OUR ROUTES -------------------------------
-// all of our routes will be prefixed with /api/address
 app.use('/api/address', router);
 
-// START THE SERVER
-// =============================================================================
-app.listen(port);
-logger.info('is-address-service running on port ' + port);
-let authConfig = JSON.parse(process.env.AUTHS)
-if (!authConfig.enabled) {
-    logger.info('address lookups are currently disabled, please set "enabled":true in the config');
-}
+app.listen(port, () => {
+    logger.info(`is-address-service running on port ${port}`);
+    const authConfig = JSON.parse(process.env.AUTHS);
+    if (!authConfig.enabled) {
+        logger.info('Address lookups are currently disabled, please set "enabled":true in the config');
+    }
+});
+
 module.exports = app;
