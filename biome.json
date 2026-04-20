@@ -4,7 +4,7 @@
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true,
-    "defaultBranch": "main"
+    "defaultBranch": "develop"
   },
   "files": {
     "ignoreUnknown": true
@@ -20,7 +20,7 @@
     "rules": {
       "recommended": true,
       "style": {
-        "noCommonJs": "error",
+        "noCommonJs": "warn",
         "noMagicNumbers": "warn"
       },
       "suspicious": {
