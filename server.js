@@ -108,7 +108,7 @@ router.route('/lookup/:postcode').get(async (req, res) => {
 
     res.json(addresses)
   } catch (error) {
-    logger.error('Error fetching addresses:', error.message)
+    logger.error(`Error fetching addresses: ${error.message}`)
     res.status(httpInternalErrorStatusCode).json({ error: 'Internal server error' })
   }
 })
@@ -144,7 +144,7 @@ router.route('/retrieve/:id').get(async (req, res) => {
       res.json({ message: 'No matching address found: no details' })
     }
   } catch (error) {
-    logger.error('Error fetching address details:', error.message)
+    logger.error(`Error fetching address details: ${error.message}`)
     res.status(httpInternalErrorStatusCode).json({ error: 'Internal server error' })
   }
 })
