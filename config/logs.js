@@ -8,18 +8,21 @@ const logFormat = printf(({ level, message }) => {
 const logger = createLogger({
   format: combine(timestamp(), logFormat),
   defaultMeta: { service: 'loi-address-service' },
-  transports: [
-    new transports.Console({
-      level: 'error',
-      handleExceptions: true,
-      handleRejections: true,
-    }),
-    new transports.Console({
-      level: 'info',
-      handleExceptions: true,
-      handleRejections: true,
-    }),
-  ],
+  transports:
+    process.env.NODE_ENV === 'test'
+      ? []
+      : [
+          new transports.Console({
+            level: 'error',
+            handleExceptions: true,
+            handleRejections: true,
+          }),
+          new transports.Console({
+            level: 'info',
+            handleExceptions: true,
+            handleRejections: true,
+          }),
+        ],
   exitOnError: false,
 })
 
