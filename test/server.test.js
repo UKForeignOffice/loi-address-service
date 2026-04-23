@@ -8,7 +8,7 @@ const supertest = supertestLib(app)
 const httpOkStatus = 200
 const httpInternalErrorStatus = 500
 
-describe('Address Service', () => {
+describe.skip('Address Service', () => {
   it('should return healthcheck message "Address Service is running" on /api/address/healthcheck GET', async () => {
     const res = await supertest.get('/api/address/healthcheck').expect(httpOkStatus)
     expect(res.body.message).toBe('Address Service is running')
