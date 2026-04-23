@@ -11,7 +11,6 @@
   "scripts": {
     "start": "node server.js 3004",
     "test": "node node_modules/mocha/bin/mocha --recursive test/ --exit",
-    "lint": "jshint --reporter checkstyle . > linting.xml",
     "format": "biome check --write .",
     "quality": "biome check --changed --since=main"
   },
