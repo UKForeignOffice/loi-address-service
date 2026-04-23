@@ -2,12 +2,15 @@ const app = require('../server.js')
 const supertest = require('supertest')(app)
 const assert = require('assert')
 const axios = require('axios')
+const httpOkStatus = 200
+const httpInternalErrorStatus = 500
+const requestTimeout = 15000
 
-describe('Address Service', function () {
-  it('should return healthcheck message "Address Service is running" on /api/address/healthcheck GET', function (done) {
+describe('Address Service', () => {
+  it('should return healthcheck message "Address Service is running" on /api/address/healthcheck GET', (done) => {
     supertest
       .get('/api/address/healthcheck')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.message, 'Address Service is running')
@@ -16,10 +19,10 @@ describe('Address Service', function () {
   })
 
   it('should return Kainos Software address on /api/address/lookup/BT71NT GET', function (done) {
-    this.timeout(15000)
+    this.timeout(requestTimeout)
     supertest
       .get('/api/address/lookup/BT71NT')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert(Array.isArray(res.body), 'Response body should be an array')
@@ -50,10 +53,10 @@ describe('Address Service', function () {
   })
 
   it('should return "No matching address found" on /api/address/lookup/INVALID GET', function (done) {
-    this.timeout(15000)
+    this.timeout(requestTimeout)
     supertest
       .get('/api/address/lookup/-')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.message, 'No matching address found: no address')
@@ -62,11 +65,11 @@ describe('Address Service', function () {
   })
 
   it('should return detailed address for valid ID on /api/address/retrieve/:id GET', function (done) {
-    this.timeout(15000)
+    this.timeout(requestTimeout)
     const testId = 'GB|RM|A|3126415|ENG'
     supertest
       .get(`/api/address/retrieve/${testId}`)
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         const address = res.body
@@ -82,11 +85,11 @@ describe('Address Service', function () {
   })
 
   it('should return 500 error for invalid ID on /api/address/retrieve/:id GET', function (done) {
-    this.timeout(15000)
+    this.timeout(requestTimeout)
     const invalidId = 'INVALID_ID'
     supertest
       .get(`/api/address/retrieve/${invalidId}`)
-      .expect(500)
+      .expect(httpInternalErrorStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.error, 'Internal server error', 'Error message should match')
@@ -94,12 +97,12 @@ describe('Address Service', function () {
       })
   })
 
-  it('should return "service disabled" when service is disabled on /api/address/lookup/:postcode GET', function (done) {
+  it('should return "service disabled" when service is disabled on /api/address/lookup/:postcode GET', (done) => {
     process.env.AUTHS = JSON.stringify({ enabled: false })
 
     supertest
       .get('/api/address/lookup/BT71NT')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.message, 'No matching address found: service disabled')
@@ -107,13 +110,13 @@ describe('Address Service', function () {
       })
   })
 
-  it('should return "service disabled" when service is disabled on /api/address/retrieve/:id GET', function (done) {
+  it('should return "service disabled" when service is disabled on /api/address/retrieve/:id GET', (done) => {
     process.env.AUTHS = JSON.stringify({ enabled: false })
 
     const testId = 'GB|RM|A|3126415|ENG'
     supertest
       .get(`/api/address/retrieve/${testId}`)
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.message, 'No matching address found: service disabled')
@@ -122,29 +125,29 @@ describe('Address Service', function () {
   })
 })
 
-describe('Address Service (mocked)', function () {
+describe('Address Service (mocked)', () => {
   let originalAxiosGet
   let originalAuths
   const mockAuth = { enabled: true, apiKey: 'test-key', url: 'https://example.test' }
 
-  before(function () {
+  before(() => {
     originalAxiosGet = axios.get
     originalAuths = process.env.AUTHS
   })
 
-  beforeEach(function () {
+  beforeEach(() => {
     process.env.AUTHS = JSON.stringify(mockAuth)
   })
 
-  afterEach(function () {
+  afterEach(() => {
     axios.get = originalAxiosGet
     process.env.AUTHS = originalAuths
   })
 
-  it('should return health message on /api/address GET', function (done) {
+  it('should return health message on /api/address GET', (done) => {
     supertest
       .get('/api/address')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.message, 'Address Service is running')
@@ -152,7 +155,7 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should return direct address items when lookup response has no postcode container', function (done) {
+  it('should return direct address items when lookup response has no postcode container', (done) => {
     axios.get = async () => ({
       data: {
         Items: [
@@ -164,7 +167,7 @@ describe('Address Service (mocked)', function () {
 
     supertest
       .get('/api/address/lookup/BT11AA')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.deepStrictEqual(res.body, [{ id: 'A1', text: '1 Any Street', description: 'Belfast BT1 1AA' }])
@@ -172,9 +175,9 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should resolve postcode containers and combine only address items', function (done) {
+  it('should resolve postcode containers and combine only address items', (done) => {
     const calls = []
-    axios.get = async (url, config) => {
+    axios.get = (url, config) => {
       calls.push({ url, params: config.params })
 
       if (!config.params.Container) {
@@ -209,7 +212,7 @@ describe('Address Service (mocked)', function () {
 
     supertest
       .get('/api/address/lookup/AA11AA')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.deepStrictEqual(res.body, [
@@ -223,12 +226,12 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should return no-address message when lookup has empty items', function (done) {
-    axios.get = async () => ({ data: { Items: [] } })
+  it('should return no-address message when lookup has empty items', (done) => {
+    axios.get = () => ({ data: { Items: [] } })
 
     supertest
       .get('/api/address/lookup/ZZ99ZZ')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.message, 'No matching address found: no address')
@@ -236,12 +239,12 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should return no-address message when lookup payload is missing items', function (done) {
-    axios.get = async () => ({ data: {} })
+  it('should return no-address message when lookup payload is missing items', (done) => {
+    axios.get = () => ({ data: {} })
 
     supertest
       .get('/api/address/lookup/ZZ99ZZ')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.message, 'No matching address found: no address')
@@ -249,14 +252,14 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should return internal error when lookup request throws', function (done) {
-    axios.get = async () => {
+  it('should return internal error when lookup request throws', (done) => {
+    axios.get = () => {
       throw new Error('lookup failed')
     }
 
     supertest
       .get('/api/address/lookup/BT11AA')
-      .expect(500)
+      .expect(httpInternalErrorStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.error, 'Internal server error')
@@ -264,7 +267,7 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should return detailed address for retrieve with full house and secondary street', function (done) {
+  it('should return detailed address for retrieve with full house and secondary street', (done) => {
     axios.get = async () => ({
       data: {
         Items: [
@@ -286,7 +289,7 @@ describe('Address Service (mocked)', function () {
 
     supertest
       .get('/api/address/retrieve/ID1')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.deepStrictEqual(res.body, {
@@ -302,7 +305,7 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should format retrieve address when only sub-building and building name are present', function (done) {
+  it('should format retrieve address when only sub-building and building name are present', (done) => {
     axios.get = async () => ({
       data: {
         Items: [
@@ -323,7 +326,7 @@ describe('Address Service (mocked)', function () {
 
     supertest
       .get('/api/address/retrieve/ID2')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.organisation, null)
@@ -334,12 +337,12 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should return no-details message when retrieve has no items', function (done) {
+  it('should return no-details message when retrieve has no items', (done) => {
     axios.get = async () => ({ data: { Items: [] } })
 
     supertest
       .get('/api/address/retrieve/NONE')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.message, 'No matching address found: no details')
@@ -347,12 +350,12 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should return no-details message when retrieve payload is missing items', function (done) {
+  it('should return no-details message when retrieve payload is missing items', (done) => {
     axios.get = async () => ({ data: {} })
 
     supertest
       .get('/api/address/retrieve/NONE')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.message, 'No matching address found: no details')
@@ -360,7 +363,7 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should format retrieve address when sub-building uses building number fallback', function (done) {
+  it('should format retrieve address when sub-building uses building number fallback', (done) => {
     axios.get = async () => ({
       data: {
         Items: [
@@ -380,7 +383,7 @@ describe('Address Service (mocked)', function () {
 
     supertest
       .get('/api/address/retrieve/ID3')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.house_name, 'Unit A, 22')
@@ -389,7 +392,7 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should format retrieve address when only building name is present', function (done) {
+  it('should format retrieve address when only building name is present', (done) => {
     axios.get = async () => ({
       data: {
         Items: [
@@ -406,7 +409,7 @@ describe('Address Service (mocked)', function () {
 
     supertest
       .get('/api/address/retrieve/ID4')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.house_name, 'Rose Court')
@@ -415,7 +418,7 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should format retrieve address when only building number is present', function (done) {
+  it('should format retrieve address when only building number is present', (done) => {
     axios.get = async () => ({
       data: {
         Items: [
@@ -433,7 +436,7 @@ describe('Address Service (mocked)', function () {
 
     supertest
       .get('/api/address/retrieve/ID5')
-      .expect(200)
+      .expect(httpOkStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.house_name, '17')
@@ -442,14 +445,14 @@ describe('Address Service (mocked)', function () {
       })
   })
 
-  it('should return internal error when retrieve request throws', function (done) {
-    axios.get = async () => {
+  it('should return internal error when retrieve request throws', (done) => {
+    axios.get = () => {
       throw new Error('retrieve failed')
     }
 
     supertest
       .get('/api/address/retrieve/BAD')
-      .expect(500)
+      .expect(httpInternalErrorStatus)
       .end((err, res) => {
         if (err) return done(err)
         assert.strictEqual(res.body.error, 'Internal server error')

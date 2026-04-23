@@ -7,22 +7,23 @@ require('dotenv').config()
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
-app.use(function (req, res, next) {
+app.use((_req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
   next()
 })
 
-const port = process.argv[2] && !isNaN(process.argv[2]) ? process.argv[2] : 3004
+const defaultPort = 3004
+const port = process.argv[2] && !Number.isNaN(Number(process.argv[2])) ? process.argv[2] : defaultPort
 
 const router = express.Router()
 
-router.get('/', (req, res) => {
+router.get('/', (_req, res) => {
   res.json({ message: 'Address Service is running' })
 })
 
-router.route('/healthcheck').get((req, res) => {
+router.route('/healthcheck').get((_req, res) => {
   res.json({ message: 'Address Service is running' })
 })
 
@@ -39,15 +40,15 @@ router.route('/lookup/:postcode').get(async (req, res) => {
   try {
     const params = { Key: authConfig.apiKey, Text: postcode, IsMiddleware: true }
 
-    const response = await axios.get(authConfig.url + '/Find/v1.10/json3.ws', { params })
+    const response = await axios.get(`${authConfig.url}/Find/v1.10/json3.ws`, { params })
 
-    if (!response.data || !response.data.Items || response.data.Items.length === 0) {
+    if (!response?.data?.Items || response.data.Items.length === 0) {
       logger.info('No addresses found for the given postcode')
       return res.json({ message: 'No matching address found: no address' })
     }
 
-    let addresses = []
-    let postcodeLookups = []
+    const addresses = []
+    const postcodeLookups = []
 
     for (const item of response.data.Items) {
       if (item.Type === 'Postcode') {
@@ -60,13 +61,13 @@ router.route('/lookup/:postcode').get(async (req, res) => {
       // Lookup addresses using each postcode ID
       const postcodeRequests = postcodeLookups.map((Id) => {
         const postcodeParams = { Key: authConfig.apiKey, Text: postcode, IsMiddleware: true, Container: Id }
-        return axios.get(authConfig.url + '/Find/v1.10/json3.ws', { params: postcodeParams })
+        return axios.get(`${authConfig.url}/Find/v1.10/json3.ws`, { params: postcodeParams })
       })
 
       const postcodeResponses = await Promise.all(postcodeRequests)
 
       for (const postcodeResponse of postcodeResponses) {
-        if (postcodeResponse.data && postcodeResponse.data.Items) {
+        if (postcodeResponse.data?.Items) {
           for (const item of postcodeResponse.data.Items) {
             if (item.Type === 'Address') {
               addresses.push({
@@ -111,8 +112,8 @@ router.route('/retrieve/:id').get(async (req, res) => {
   try {
     const params = { Key: authConfig.apiKey, Id: addressId }
 
-    const response = await axios.get(authConfig.url + '/Retrieve/v1.20/json3.ws', { params })
-    if (response.data && response.data.Items && response.data.Items.length > 0) {
+    const response = await axios.get(`${authConfig.url}/Retrieve/v1.20/json3.ws`, { params })
+    if (response.data?.Items && response.data.Items.length > 0) {
       const address = response.data.Items[0]
       const formattedAddress = {
         organisation: address.Company || null,
