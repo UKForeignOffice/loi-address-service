@@ -1,130 +1,69 @@
-import assert from 'node:assert'
 import axios from 'axios'
 import supertestLib from 'supertest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { app } from '../server.js'
 
 const supertest = supertestLib(app)
 
 const httpOkStatus = 200
 const httpInternalErrorStatus = 500
-const requestTimeout = 15000
 
 describe('Address Service', () => {
-  it('should return healthcheck message "Address Service is running" on /api/address/healthcheck GET', (done) => {
-    supertest
-      .get('/api/address/healthcheck')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.message, 'Address Service is running')
-        done()
-      })
+  it('should return healthcheck message "Address Service is running" on /api/address/healthcheck GET', async () => {
+    const res = await supertest.get('/api/address/healthcheck').expect(httpOkStatus)
+    expect(res.body.message).toBe('Address Service is running')
   })
 
-  it('should return Kainos Software address on /api/address/lookup/BT71NT GET', function (done) {
-    this.timeout(requestTimeout)
-    supertest
-      .get('/api/address/lookup/BT71NT')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert(Array.isArray(res.body), 'Response body should be an array')
-        assert(res.body.length > 0, 'Response should contain addresses')
-
-        const kainosAddress = res.body.find((address) => (address.text || '').includes('Kainos Software Ltd'))
-
-        assert(kainosAddress, 'Kainos Software Ltd address should be in the response')
-        assert(kainosAddress.id && kainosAddress.id.trim() !== '', 'Address id should be populated')
-
-        if (kainosAddress.description && kainosAddress.description.trim() !== '') {
-          assert.strictEqual(
-            kainosAddress.text,
-            'Kainos Software Ltd 4-6 Upper Crescent',
-            'Text should contain only the address without postcode',
-          )
-          assert(kainosAddress.description.includes('Belfast BT7 1NT'), 'Description should contain Belfast BT7 1NT')
-        } else {
-          assert.strictEqual(
-            kainosAddress.text,
-            'Kainos Software Ltd 4-6 Upper Crescent Belfast BT7 1NT',
-            'Text should contain full address including postcode',
-          )
-        }
-
-        done()
-      })
+  it('should return Kainos Software address on /api/address/lookup/BT71NT GET', async () => {
+    const res = await supertest.get('/api/address/lookup/BT71NT').expect(httpOkStatus)
+    expect(Array.isArray(res.body)).toBe(true)
+    expect(res.body.length).toBeGreaterThan(0)
+    const kainosAddress = res.body.find((address) => (address.text || '').includes('Kainos Software Ltd'))
+    expect(kainosAddress).toBeTruthy()
+    expect(kainosAddress.id?.trim()).toBeTruthy()
+    if (kainosAddress.description?.trim() !== '') {
+      expect(kainosAddress.text).toBe('Kainos Software Ltd 4-6 Upper Crescent')
+      expect(kainosAddress.description).toContain('Belfast BT7 1NT')
+    } else {
+      expect(kainosAddress.text).toBe('Kainos Software Ltd 4-6 Upper Crescent Belfast BT7 1NT')
+    }
   })
 
-  it('should return "No matching address found" on /api/address/lookup/INVALID GET', function (done) {
-    this.timeout(requestTimeout)
-    supertest
-      .get('/api/address/lookup/-')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.message, 'No matching address found: no address')
-        done()
-      })
+  it('should return "No matching address found" on /api/address/lookup/INVALID GET', async () => {
+    const res = await supertest.get('/api/address/lookup/-').expect(httpOkStatus)
+    expect(res.body.message).toBe('No matching address found: no address')
   })
 
-  it('should return detailed address for valid ID on /api/address/retrieve/:id GET', function (done) {
-    this.timeout(requestTimeout)
+  it('should return detailed address for valid ID on /api/address/retrieve/:id GET', async () => {
     const testId = 'GB|RM|A|3126415|ENG'
-    supertest
-      .get(`/api/address/retrieve/${testId}`)
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        const address = res.body
-        assert.strictEqual(address.organisation, 'Kainos Software Ltd')
-        assert.strictEqual(address.house_name, '4-6')
-        assert.strictEqual(address.street, 'Upper Crescent')
-        assert.strictEqual(address.town, 'Belfast')
-        assert.strictEqual(address.county, 'County Antrim')
-        assert.strictEqual(address.postcode, 'BT7 1NT')
-        assert(address.full.includes('Kainos Software Ltd'), 'Full address should contain organisation name')
-        done()
-      })
+    const res = await supertest.get(`/api/address/retrieve/${testId}`).expect(httpOkStatus)
+    const address = res.body
+    expect(address.organisation).toBe('Kainos Software Ltd')
+    expect(address.house_name).toBe('4-6')
+    expect(address.street).toBe('Upper Crescent')
+    expect(address.town).toBe('Belfast')
+    expect(address.county).toBe('County Antrim')
+    expect(address.postcode).toBe('BT7 1NT')
+    expect(address.full).toContain('Kainos Software Ltd')
   })
 
-  it('should return 500 error for invalid ID on /api/address/retrieve/:id GET', function (done) {
-    this.timeout(requestTimeout)
+  it('should return 500 error for invalid ID on /api/address/retrieve/:id GET', async () => {
     const invalidId = 'INVALID_ID'
-    supertest
-      .get(`/api/address/retrieve/${invalidId}`)
-      .expect(httpInternalErrorStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.error, 'Internal server error', 'Error message should match')
-        done()
-      })
+    const res = await supertest.get(`/api/address/retrieve/${invalidId}`).expect(httpInternalErrorStatus)
+    expect(res.body.error).toBe('Internal server error')
   })
 
-  it('should return "service disabled" when service is disabled on /api/address/lookup/:postcode GET', (done) => {
+  it('should return "service disabled" when service is disabled on /api/address/lookup/:postcode GET', async () => {
     process.env.AUTHS = JSON.stringify({ enabled: false })
-
-    supertest
-      .get('/api/address/lookup/BT71NT')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.message, 'No matching address found: service disabled')
-        done()
-      })
+    const res = await supertest.get('/api/address/lookup/BT71NT').expect(httpOkStatus)
+    expect(res.body.message).toBe('No matching address found: service disabled')
   })
 
-  it('should return "service disabled" when service is disabled on /api/address/retrieve/:id GET', (done) => {
+  it('should return "service disabled" when service is disabled on /api/address/retrieve/:id GET', async () => {
     process.env.AUTHS = JSON.stringify({ enabled: false })
-
     const testId = 'GB|RM|A|3126415|ENG'
-    supertest
-      .get(`/api/address/retrieve/${testId}`)
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.message, 'No matching address found: service disabled')
-        done()
-      })
+    const res = await supertest.get(`/api/address/retrieve/${testId}`).expect(httpOkStatus)
+    expect(res.body.message).toBe('No matching address found: service disabled')
   })
 })
 
@@ -133,7 +72,7 @@ describe('Address Service (mocked)', () => {
   let originalAuths
   const mockAuth = { enabled: true, apiKey: 'test-key', url: 'https://example.test' }
 
-  before(() => {
+  beforeAll(() => {
     originalAxiosGet = axios.get
     originalAuths = process.env.AUTHS
   })
@@ -145,21 +84,16 @@ describe('Address Service (mocked)', () => {
   afterEach(() => {
     axios.get = originalAxiosGet
     process.env.AUTHS = originalAuths
+    vi.restoreAllMocks()
   })
 
-  it('should return health message on /api/address GET', (done) => {
-    supertest
-      .get('/api/address')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.message, 'Address Service is running')
-        done()
-      })
+  it('should return health message on /api/address GET', async () => {
+    const res = await supertest.get('/api/address').expect(httpOkStatus)
+    expect(res.body.message).toBe('Address Service is running')
   })
 
-  it('should return direct address items when lookup response has no postcode container', (done) => {
-    axios.get = async () => ({
+  it('should return direct address items when lookup response has no postcode container', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({
       data: {
         Items: [
           { Type: 'Address', Id: 'A1', Text: '1 Any Street', Description: 'Belfast BT1 1AA' },
@@ -167,24 +101,16 @@ describe('Address Service (mocked)', () => {
         ],
       },
     })
-
-    supertest
-      .get('/api/address/lookup/BT11AA')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.deepStrictEqual(res.body, [{ id: 'A1', text: '1 Any Street', description: 'Belfast BT1 1AA' }])
-        done()
-      })
+    const res = await supertest.get('/api/address/lookup/BT11AA').expect(httpOkStatus)
+    expect(res.body).toEqual([{ id: 'A1', text: '1 Any Street', description: 'Belfast BT1 1AA' }])
   })
 
-  it('should resolve postcode containers and combine only address items', (done) => {
+  it('should resolve postcode containers and combine only address items', async () => {
     const calls = []
-    axios.get = (url, config) => {
+    vi.spyOn(axios, 'get').mockImplementation((url, config) => {
       calls.push({ url, params: config.params })
-
       if (!config.params.Container) {
-        return {
+        return Promise.resolve({
           data: {
             Items: [
               { Type: 'Postcode', Id: 'PC1' },
@@ -192,86 +118,56 @@ describe('Address Service (mocked)', () => {
               { Type: 'Building', Id: 'B1' },
             ],
           },
-        }
+        })
       }
-
       if (config.params.Container === 'PC1') {
-        return {
+        return Promise.resolve({
           data: {
             Items: [
               { Type: 'Address', Id: 'A1', Text: '10 Main St', Description: 'Town AA1 1AA' },
               { Type: 'Building', Id: 'B2', Text: 'Non-address', Description: 'Ignore' },
             ],
           },
-        }
+        })
       }
-
-      return {
+      return Promise.resolve({
         data: {
           Items: [{ Type: 'Address', Id: 'A2', Text: '11 Main St', Description: 'Town AA1 1AA' }],
         },
-      }
-    }
-
-    supertest
-      .get('/api/address/lookup/AA11AA')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.deepStrictEqual(res.body, [
-          { id: 'A1', text: '10 Main St', description: 'Town AA1 1AA' },
-          { id: 'A2', text: '11 Main St', description: 'Town AA1 1AA' },
-        ])
-        assert.strictEqual(calls.length, 3)
-        assert.strictEqual(calls[1].params.Container, 'PC1')
-        assert.strictEqual(calls[2].params.Container, 'PC2')
-        done()
       })
+    })
+    const res = await supertest.get('/api/address/lookup/AA11AA').expect(httpOkStatus)
+    expect(res.body).toEqual([
+      { id: 'A1', text: '10 Main St', description: 'Town AA1 1AA' },
+      { id: 'A2', text: '11 Main St', description: 'Town AA1 1AA' },
+    ])
+    expect(calls.length).toBe(3)
+    expect(calls[1].params.Container).toBe('PC1')
+    expect(calls[2].params.Container).toBe('PC2')
   })
 
-  it('should return no-address message when lookup has empty items', (done) => {
-    axios.get = () => ({ data: { Items: [] } })
-
-    supertest
-      .get('/api/address/lookup/ZZ99ZZ')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.message, 'No matching address found: no address')
-        done()
-      })
+  it('should return no-address message when lookup has empty items', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({ data: { Items: [] } })
+    const res = await supertest.get('/api/address/lookup/ZZ99ZZ').expect(httpOkStatus)
+    expect(res.body.message).toBe('No matching address found: no address')
   })
 
-  it('should return no-address message when lookup payload is missing items', (done) => {
-    axios.get = () => ({ data: {} })
-
-    supertest
-      .get('/api/address/lookup/ZZ99ZZ')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.message, 'No matching address found: no address')
-        done()
-      })
+  it('should return no-address message when lookup payload is missing items', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({ data: {} })
+    const res = await supertest.get('/api/address/lookup/ZZ99ZZ').expect(httpOkStatus)
+    expect(res.body.message).toBe('No matching address found: no address')
   })
 
-  it('should return internal error when lookup request throws', (done) => {
-    axios.get = () => {
+  it('should return internal error when lookup request throws', async () => {
+    vi.spyOn(axios, 'get').mockImplementation(() => {
       throw new Error('lookup failed')
-    }
-
-    supertest
-      .get('/api/address/lookup/BT11AA')
-      .expect(httpInternalErrorStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.error, 'Internal server error')
-        done()
-      })
+    })
+    const res = await supertest.get('/api/address/lookup/BT11AA').expect(httpInternalErrorStatus)
+    expect(res.body.error).toBe('Internal server error')
   })
 
-  it('should return detailed address for retrieve with full house and secondary street', (done) => {
-    axios.get = async () => ({
+  it('should return detailed address for retrieve with full house and secondary street', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({
       data: {
         Items: [
           {
@@ -289,27 +185,20 @@ describe('Address Service (mocked)', () => {
         ],
       },
     })
-
-    supertest
-      .get('/api/address/retrieve/ID1')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.deepStrictEqual(res.body, {
-          organisation: 'Acme Ltd',
-          house_name: 'Flat 2, River House, 9',
-          street: 'Market Lane, High Street',
-          town: 'Belfast',
-          county: 'County Antrim',
-          postcode: 'BT1 2AA',
-          full: 'Acme Ltd, Flat 2, River House, 9 Market Lane, High Street, Belfast, BT1 2AA',
-        })
-        done()
-      })
+    const res = await supertest.get('/api/address/retrieve/ID1').expect(httpOkStatus)
+    expect(res.body).toEqual({
+      organisation: 'Acme Ltd',
+      house_name: 'Flat 2, River House, 9',
+      street: 'Market Lane, High Street',
+      town: 'Belfast',
+      county: 'County Antrim',
+      postcode: 'BT1 2AA',
+      full: 'Acme Ltd, Flat 2, River House, 9 Market Lane, High Street, Belfast, BT1 2AA',
+    })
   })
 
-  it('should format retrieve address when only sub-building and building name are present', (done) => {
-    axios.get = async () => ({
+  it('should format retrieve address when only sub-building and building name are present', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({
       data: {
         Items: [
           {
@@ -326,48 +215,27 @@ describe('Address Service (mocked)', () => {
         ],
       },
     })
-
-    supertest
-      .get('/api/address/retrieve/ID2')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.organisation, null)
-        assert.strictEqual(res.body.house_name, 'Suite 4, Phoenix House')
-        assert.strictEqual(res.body.street, 'King Street')
-        assert.strictEqual(res.body.county, '')
-        done()
-      })
+    const res = await supertest.get('/api/address/retrieve/ID2').expect(httpOkStatus)
+    expect(res.body.organisation).toBe(null)
+    expect(res.body.house_name).toBe('Suite 4, Phoenix House')
+    expect(res.body.street).toBe('King Street')
+    expect(res.body.county).toBe('')
   })
 
-  it('should return no-details message when retrieve has no items', (done) => {
-    axios.get = async () => ({ data: { Items: [] } })
-
-    supertest
-      .get('/api/address/retrieve/NONE')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.message, 'No matching address found: no details')
-        done()
-      })
+  it('should return no-details message when retrieve has no items', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({ data: { Items: [] } })
+    const res = await supertest.get('/api/address/retrieve/NONE').expect(httpOkStatus)
+    expect(res.body.message).toBe('No matching address found: no details')
   })
 
-  it('should return no-details message when retrieve payload is missing items', (done) => {
-    axios.get = async () => ({ data: {} })
-
-    supertest
-      .get('/api/address/retrieve/NONE')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.message, 'No matching address found: no details')
-        done()
-      })
+  it('should return no-details message when retrieve payload is missing items', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({ data: {} })
+    const res = await supertest.get('/api/address/retrieve/NONE').expect(httpOkStatus)
+    expect(res.body.message).toBe('No matching address found: no details')
   })
 
-  it('should format retrieve address when sub-building uses building number fallback', (done) => {
-    axios.get = async () => ({
+  it('should format retrieve address when sub-building uses building number fallback', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({
       data: {
         Items: [
           {
@@ -383,20 +251,13 @@ describe('Address Service (mocked)', () => {
         ],
       },
     })
-
-    supertest
-      .get('/api/address/retrieve/ID3')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.house_name, 'Unit A, 22')
-        assert.strictEqual(res.body.street, 'Harbour Road')
-        done()
-      })
+    const res = await supertest.get('/api/address/retrieve/ID3').expect(httpOkStatus)
+    expect(res.body.house_name).toBe('Unit A, 22')
+    expect(res.body.street).toBe('Harbour Road')
   })
 
-  it('should format retrieve address when only building name is present', (done) => {
-    axios.get = async () => ({
+  it('should format retrieve address when only building name is present', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({
       data: {
         Items: [
           {
@@ -409,20 +270,13 @@ describe('Address Service (mocked)', () => {
         ],
       },
     })
-
-    supertest
-      .get('/api/address/retrieve/ID4')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.house_name, 'Rose Court')
-        assert.strictEqual(res.body.street, '')
-        done()
-      })
+    const res = await supertest.get('/api/address/retrieve/ID4').expect(httpOkStatus)
+    expect(res.body.house_name).toBe('Rose Court')
+    expect(res.body.street).toBe('')
   })
 
-  it('should format retrieve address when only building number is present', (done) => {
-    axios.get = async () => ({
+  it('should format retrieve address when only building number is present', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValueOnce({
       data: {
         Items: [
           {
@@ -436,30 +290,16 @@ describe('Address Service (mocked)', () => {
         ],
       },
     })
-
-    supertest
-      .get('/api/address/retrieve/ID5')
-      .expect(httpOkStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.house_name, '17')
-        assert.strictEqual(res.body.street, 'Castle Street')
-        done()
-      })
+    const res = await supertest.get('/api/address/retrieve/ID5').expect(httpOkStatus)
+    expect(res.body.house_name).toBe('17')
+    expect(res.body.street).toBe('Castle Street')
   })
 
-  it('should return internal error when retrieve request throws', (done) => {
-    axios.get = () => {
+  it('should return internal error when retrieve request throws', async () => {
+    vi.spyOn(axios, 'get').mockImplementation(() => {
       throw new Error('retrieve failed')
-    }
-
-    supertest
-      .get('/api/address/retrieve/BAD')
-      .expect(httpInternalErrorStatus)
-      .end((err, res) => {
-        if (err) return done(err)
-        assert.strictEqual(res.body.error, 'Internal server error')
-        done()
-      })
+    })
+    const res = await supertest.get('/api/address/retrieve/BAD').expect(httpInternalErrorStatus)
+    expect(res.body.error).toBe('Internal server error')
   })
 })
