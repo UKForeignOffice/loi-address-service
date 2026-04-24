@@ -1,7 +1,10 @@
-const app = require('../server.js')
-const supertest = require('supertest')(app)
-const assert = require('assert')
-const axios = require('axios')
+import assert from 'node:assert'
+import axios from 'axios'
+import supertestLib from 'supertest'
+import { app } from '../server.js'
+
+const supertest = supertestLib(app)
+
 const httpOkStatus = 200
 const httpInternalErrorStatus = 500
 const requestTimeout = 15000
