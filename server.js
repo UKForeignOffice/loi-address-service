@@ -164,7 +164,14 @@ app.use('/api/address', router)
 
 app.listen(port, () => {
   logger.info(`is-address-service running on port ${port}`)
-  const authConfig = JSON.parse(process.env.AUTHS)
+  let authConfig = { enabled: false }
+  try {
+    if (process.env.AUTHS) {
+      authConfig = JSON.parse(process.env.AUTHS)
+    }
+  } catch (_error) {
+    logger.error('Invalid AUTHS environment variable, using default config')
+  }
   if (!authConfig.enabled) {
     logger.info('Address lookups are currently disabled, please set "enabled":true in the config')
   }
