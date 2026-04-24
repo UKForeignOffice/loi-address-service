@@ -1,9 +1,12 @@
-const express = require('express') // call express
-const app = express() // define our app using express
-const bodyParser = require('body-parser')
-const axios = require('axios')
-const logger = require('./config/logs')
-require('dotenv').config()
+import axios from 'axios'
+import bodyParser from 'body-parser'
+import dotenv from 'dotenv'
+import express from 'express'
+import { logger } from './config/logs.js'
+
+dotenv.config()
+
+const app = express()
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
@@ -15,7 +18,8 @@ app.use((_req, res, next) => {
 })
 
 const defaultPort = 3004
-const port = process.argv[2] && !Number.isNaN(Number(process.argv[2])) ? process.argv[2] : defaultPort
+const port =
+  process.argv[2] && !Number.isNaN(Number(process.argv[2])) ? process.argv[2] : process.env.PORT || defaultPort
 
 const router = express.Router()
 
@@ -166,4 +170,4 @@ app.listen(port, () => {
   }
 })
 
-module.exports = app
+export { app }

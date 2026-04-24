@@ -20,7 +20,7 @@
     "rules": {
       "recommended": true,
       "style": {
-        "noCommonJs": "warn"
+        "noCommonJs": "error"
       },
       "suspicious": {
         "useAwait": "error"
