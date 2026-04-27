@@ -12,7 +12,7 @@
     "start": "node server.js 3004",
     "test": "PORT=3600 NODE_ENV=test vitest run --coverage",
     "format": "biome check --write .",
-    "quality": "biome check --changed --since=main"
+    "quality": "biome check --changed --since=develop"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.12",
