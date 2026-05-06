@@ -9,8 +9,6 @@ const logFormat = printf(({ level, message }) => {
 export const logger = createLogger({
   format: combine(timestamp(), logFormat),
   defaultMeta: { service: 'loi-address-service' },
-  transports: [
-    new transports.Console({ level: 'info', handleExceptions: true, handleRejections: true }),
-  ],
+  transports: [new transports.Console({ level: 'info', handleExceptions: true, handleRejections: true })],
   exitOnError: false,
 })
