@@ -1,6 +1,4 @@
 import axios from 'axios'
-
-const axios2 = require('axios')
 import bodyParser from 'body-parser'
 import dotenv from 'dotenv'
 import express from 'express'
