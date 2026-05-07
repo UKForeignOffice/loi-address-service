@@ -22,7 +22,7 @@ describe.skip('Address Service', () => {
     expect(kainosAddress).toBeTruthy()
     expect(kainosAddress.id?.trim()).toBeTruthy()
     if (kainosAddress.description?.trim() !== '') {
-      expect(kainosAddress.text).toBe('Kainos Software Ltd 4-6 Upper Crescent')
+      expect(kainosAddress.text).toBe('Kainos Software Ltd 4-6 Upper Crescent212')
       expect(kainosAddress.description).toContain('Belfast BT7 1NT')
     } else {
       expect(kainosAddress.text).toBe('Kainos Software Ltd 4-6 Upper Crescent Belfast BT7 1NT')
