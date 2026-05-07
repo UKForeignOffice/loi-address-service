@@ -1,20 +1,14 @@
-const { createLogger, format, transports } = require('winston');
-const { combine, splat, timestamp, printf } = format;
+import { createLogger, format, transports } from 'winston'
 
-const logFormat = printf( ({ level, message, timestamp}) => {
-    return `${level.toUpperCase()}: ${message} `
-});
+const { combine, timestamp, printf } = format
 
-const logger = createLogger({
-    format: combine(timestamp(), logFormat),
-    defaultMeta: { service: 'loi-address-service' },
-    transports: [
-        new transports.Console({level: 'error', handleExceptions: true, handleRejections: true}),
-        new transports.Console({level: 'info', handleExceptions: true, handleRejections: true})
-    ],
-    exitOnError: false
-});
+const logFormat = printf(({ level, message }) => {
+  return `${level.toUpperCase()}: ${message} `
+})
 
-module.exports = logger;
-
-
+export const logger = createLogger({
+  format: combine(timestamp(), logFormat),
+  defaultMeta: { service: 'loi-address-service' },
+  transports: [new transports.Console({ level: 'info', handleExceptions: true, handleRejections: true })],
+  exitOnError: false,
+})
