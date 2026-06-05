@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import express from 'express'
 import { logger } from './config/logs.js'
 
-dotenv.config()
+dotenv.config({ quiet: true })
 
 const app = express()
 
