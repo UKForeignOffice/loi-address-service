@@ -44,7 +44,11 @@ router.route('/lookup/:postcode').get(async (req, res) => {
   try {
     const params = { Key: authConfig.apiKey, Text: postcode, IsMiddleware: true }
 
+    const profiler = logger.startTimer('Address lookup')
+
     const response = await axios.get(`${authConfig.url}/Find/v1.10/json3.ws`, { params })
+
+    profiler.done({ message: `Address lookup completed for postcode (${postcode}) took` })
 
     if (!response?.data?.Items || response.data.Items.length === 0) {
       logger.info('No addresses found for the given postcode')
@@ -98,7 +102,7 @@ router.route('/lookup/:postcode').get(async (req, res) => {
 
     res.json(addresses)
   } catch (error) {
-    logger.error('Error fetching addresses:', error.message)
+    logger.error('Error fetching addresses:', { postcode, error })
     res.status(500).json({ error: 'Internal server error' })
   }
 })
@@ -130,11 +134,11 @@ router.route('/retrieve/:id').get(async (req, res) => {
       }
       res.json(formattedAddress)
     } else {
-      logger.info('No detailed address found for the given ID')
+      logger.info('No detailed address found for the given ID', { addressId })
       res.json({ message: 'No matching address found: no details' })
     }
   } catch (error) {
-    logger.error('Error fetching address details:', error.message)
+    logger.error('Error fetching address details:', { addressId, error: error.message })
     res.status(500).json({ error: 'Internal server error' })
   }
 })
