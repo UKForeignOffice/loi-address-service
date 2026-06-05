@@ -48,7 +48,10 @@ router.route('/lookup/:postcode').get(async (req, res) => {
 
     const response = await axios.get(`${authConfig.url}/Find/v1.10/json3.ws`, { params })
 
-    profiler.done({ message: `Address lookup completed for postcode (${postcode}) took` })
+    profiler.done({
+      message: `Address lookup completed for postcode (${postcode}) took`,
+      ...logger.defaultMeta,
+    })
 
     if (!response?.data?.Items || response.data.Items.length === 0) {
       logger.info('No addresses found for the given postcode')
@@ -120,7 +123,15 @@ router.route('/retrieve/:id').get(async (req, res) => {
   try {
     const params = { Key: authConfig.apiKey, Id: addressId }
 
+    const profiler = logger.startTimer('Retrieve selected address details')
+
     const response = await axios.get(`${authConfig.url}/Retrieve/v1.20/json3.ws`, { params })
+
+    profiler.done({
+      message: `Retrieve Address details for ID (${addressId}) completed`,
+      ...logger.defaultMeta,
+    })
+
     if (response.data?.Items && response.data.Items.length > 0) {
       const address = response.data.Items[0]
       const formattedAddress = {
