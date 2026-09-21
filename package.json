@@ -14,11 +14,13 @@
     "test": "PORT=3600 NODE_ENV=test vitest run --coverage",
     "dev": "NODE_ENV=development node server.js 3004",
     "format": "biome check --write .",
-    "quality": "biome check --changed --since=develop"
+    "quality": "biome check --changed --since=develop",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.12",
     "@vitest/coverage-v8": "^4.1.5",
+    "husky": "^9.1.7",
     "supertest": "^7.2.0",
     "vitest": "^4.1.5"
   }
