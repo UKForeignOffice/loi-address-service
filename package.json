@@ -19,9 +19,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.12",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/coverage-v8": "^4.1.11",
     "husky": "^9.1.7",
     "supertest": "^7.2.0",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.11"
   }
 }
